@@ -8,7 +8,8 @@ import (
 
 const (
 	// address = "0xd8da6bf26964af9d7eed9e03e53415d37aa96045" // vitalik.eth
-	address = "0x983110309620d911731ac0932219af06091b6744" // brantly.eth
+	// address = "0x983110309620d911731ac0932219af06091b6744" // brantly.eth
+	address = "0xf987eB73D928b80fF1477935AE894D046AC600a7" // unstopablcrypto , listed in twitter sybil accounts
 )
 
 func main() {

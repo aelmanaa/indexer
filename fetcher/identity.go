@@ -7,7 +7,7 @@ import (
 	"go.uber.org/zap"
 )
 
-const IdentityApiCount = 2
+const IdentityApiCount = 3
 
 func (f *fetcher) FetchIdentity(address string) (IdentityEntryList, error) {
 
@@ -19,8 +19,9 @@ func (f *fetcher) FetchIdentity(address string) (IdentityEntryList, error) {
 	go f.processContext(address, ch)
 	// Superrare API
 	go f.processSuperrare(address, ch)
-	// Part 2 - Add other data source here
-	// TODO
+	// Twitter identity
+	go f.processTwitterSybilList(address,ch)
+	// TODO Add other data source here
 
 	// Final Part - Merge entry
 	for i := 0; i < IdentityApiCount; i++ {
@@ -180,6 +181,42 @@ func (f *fetcher) processSuperrare(address string, ch chan<- IdentityEntry) {
 		newSprRecord.TwitterLink != "" || newSprRecord.SteemitLink != "" || newSprRecord.Website != "" ||
 		newSprRecord.SpotifyLink != "" || newSprRecord.SoundCloudLink != "" {
 		result.Superrare = &newSprRecord
+	}
+
+	ch <- result
+}
+
+func (f *fetcher) processTwitterSybilList(address string, ch chan<- IdentityEntry) {
+	var result IdentityEntry
+
+	body, err := sendRequest(f.httpClient, RequestArgs{
+		url:    TwitterSybilUrl,
+		method: "GET",
+	})
+	if err != nil {
+		result.Err = err
+		result.Msg = "[processTwitterSybilList] fetch identity failed"
+		ch <- result
+		return
+	}
+
+	twitterSybilList := TwitterSybilList{}
+	err = json.Unmarshal(body, &twitterSybilList)
+	if err != nil {
+		result.Err = err
+		result.Msg = "[processTwitterSybilList] response json unmarshal failed"
+		ch <- result
+		return
+	}
+
+	profile,found := twitterSybilList[address]
+  if(found && profile.Twitter.Handle != ""){
+		result.Twitter = &UserTwitterIdentity{
+			Handle: profile.Twitter.Handle,
+			Timestamp: profile.Twitter.Timestamp,
+			TweetID: profile.Twitter.TweetId,
+			DataSource: SYBIL,
+		}
 	}
 
 	ch <- result
